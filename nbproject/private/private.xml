@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <data xmlns="http://www.netbeans.org/ns/make-project-private/1">
+        <activeConfTypeElem>1</activeConfTypeElem>
+        <activeConfIndexElem>1</activeConfIndexElem>
+    </data>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group name="BlackyJava_Editor2">
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/main.c</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/nbproject/private/configurations.xml</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/klipper/generic/can_fd_support.c</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/systemd/canfdtoserial@.service</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/nbproject/private/Makefile-variables.mk</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/nbproject/private/launcher.properties</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/nbproject/private/private.xml</file>
+            <file>file:/projekty/opensource/3d/extruder-board/CanFdToSerial/nbproject/private/downloads-octopi.lan-pi-22</file>
+        </group>
+    </open-files>
+</project-private>

@@ -1,0 +1,19 @@
+[Unit]
+Description=CanFdToSerial connection to %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+TimeoutStartSec=0
+TimeoutStopSec=0
+WorkingDirectory=/home/pi/CanFdToSerial/dist/Release/GNU-Linux/
+ExecStart=/home/pi/CanFdToSerial/dist/Release/GNU-Linux/canfdtoserial %i
+KillMode=process
+LimitNPROC=20
+RestartSec=5s
+
+
+[Install]
+WantedBy=multi-user.target
