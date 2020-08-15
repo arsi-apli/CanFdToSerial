@@ -57,13 +57,15 @@ static char mcuNr[20];
 #define MESSAGE_DEST 0x10
 
 static int sock;
-pthread_t RxTh;
-pthread_t TxTh;
-pthread_t IxTh;
+pthread_t PxTh; //ping thread
+pthread_t RxTh; //rx thread
+pthread_t TxTh; //tx thread
+pthread_t IxTh; // Inotify thread
 static int Inotify;
 static int threadexit = 0;
 static int threadexitTx = 0;
 static int threadexitIx = 0;
+static int threadexitPx = 0;
 static int running;
 int watch;
 int fd, sfd, res;
@@ -75,6 +77,7 @@ uint32_t bytes_read, bytes_invalid;
 static uint8_t mcuAddress;
 struct canfd_frame frameOut;
 can_fd_frame mcuCanFrame;
+can_fd_frame mcuCanPingFrame;
 static uint8_t encodeBuffer[100];
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
@@ -267,6 +270,49 @@ static void input_event(void) {
 }
 
 /**
+ * Ping MCU thread
+ * @param ptr
+ * @return 
+ */
+void *CanPxThread(void *ptr) {
+    //ping MCU every 5s
+    struct canfd_frame frame;
+    while (threadexitPx == 0) {
+        sleep(1);
+        if (threadexitPx != 0) {
+            break;
+        }
+        sleep(1);
+        if (threadexitPx != 0) {
+            break;
+        }
+        sleep(1);
+        if (threadexitPx != 0) {
+            break;
+        }
+        sleep(1);
+        if (threadexitPx != 0) {
+            break;
+        }
+        sleep(1);
+        if (threadexitPx != 0) {
+            break;
+        }
+        mcuCanPingFrame.can_id.value = 0;
+        mcuCanPingFrame.can_id.id.destination_address = mcuAddress;
+        mcuCanPingFrame.can_id.id.source_address = 0;
+        mcuCanPingFrame.can_id.id.msg_type = can_fd_msg_type_ping;
+        mcuCanPingFrame.can_id.id.msglen = 0;
+        frame.can_id = mcuCanFrame.can_id.value | CAN_EFF_FLAG;
+        frame.len = 0;
+        if (write(sock, &frame, sizeof (struct can_frame)) != sizeof (struct can_frame)) {
+            perror("Error sending command via CAN FD!");
+        }
+    }
+
+}
+
+/**
  * Handle virtual serial port open/close
  * @param ptr
  * @return 
@@ -425,6 +471,7 @@ int CanSockInit(void) {
     // Create threads
     pthread_create(&RxTh, NULL, CanRxThread, (void *) &RxTh);
     pthread_create(&IxTh, NULL, CanIxThread, (void *) &IxTh);
+    pthread_create(&PxTh, NULL, CanPxThread, (void *) &PxTh);
     pthread_create(&TxTh, NULL, CanTxThread, NULL);
     return 0;
 }
@@ -436,11 +483,13 @@ void CanSockClose() {
     threadexitIx = 1;
     threadexit = 1;
     threadexitTx = 1;
+    threadexitPx = 1;
     close(sock);
     CanVportClose();
     pthread_join(RxTh, NULL);
     pthread_join(TxTh, NULL);
     pthread_join(IxTh, NULL);
+    pthread_join(PxTh, NULL);
 }
 
 /**
@@ -536,13 +585,24 @@ int main(int argc, char** argv) {
         printf("****************************************************************\n\r");
         static char ipDown[100];
         static char ipUp[200];
-        sprintf(ipDown, "ip link set %s down", portName);
-        sprintf(ipUp, "ip link set %s up type can bitrate 1000000   dbitrate 1000000 restart-ms 1000 berr-reporting on fd on", portName);
-        printf("%s\n\r", ipDown);
-        system(ipDown);
-        printf("%s\n\r", ipUp);
-        system(ipUp);
-
+        static char lock[200];
+        //configure the CAN interface only at the first start on the given port
+        sprintf(lock, "/run/lock/%s.lock", portName);//use tmfs
+        if (access(lock, F_OK) != -1) {
+            printf("CAN interface init skiped, the previous instance configured it..\n\r");
+        } else {
+            printf("CAN interface init..\n\r");
+            sprintf(ipDown, "ip link set %s down", portName);
+            sprintf(ipUp, "ip link set %s up type can bitrate 1000000   dbitrate 1000000 restart-ms 1000 berr-reporting on fd on", portName);
+            printf("%s\n\r", ipDown);
+            system(ipDown);
+            printf("%s\n\r", ipUp);
+            system(ipUp);
+            int fd2 = open(lock, O_RDWR | O_CREAT, 0770); //create init lock for this CAN port
+            if (fd2 != -1) {
+                close(fd2);
+            }
+        }
     }
     if (signal(SIGINT, cleanup_handler) == SIG_ERR) {
         fprintf(stderr, "Can't catch SIGINT\n");
