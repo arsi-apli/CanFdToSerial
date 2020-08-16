@@ -55,6 +55,7 @@ fd - CAN FD
 sd - CAN 2.0B Currently not supported
 
 The application creates a serial port according to the command line argument:
+
 /tmp/ttyCAN0MCU0
 
 /tmp/ttyCAN0MCU1
