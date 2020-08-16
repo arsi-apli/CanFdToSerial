@@ -34,7 +34,7 @@
 #include <sys/time.h>
 
 // cd do klipper dir and:
-//      ~/klippy-env/bin/python ./klippy/console.py /tmp/ttyCAN1 250000
+//      ~/klippy-env/bin/python ./klippy/console.py /tmp/ttyCAN0MCU2 250000
 
 static char portName[30];
 static char portNameUpper[30];
@@ -44,7 +44,7 @@ static char mcuNr[20];
 
 #define NUM_CAN_FILTERS 1
 
-//original Klipper defs
+//original Klipper message defs
 #define MESSAGE_POS_LEN 0
 #define MESSAGE_POS_SEQ 1
 #define MESSAGE_TRAILER_SIZE 3
@@ -346,7 +346,6 @@ void *CanIxThread(void *ptr) {
  * @return 
  */
 void *CanTxThread(void *ptr) {
-    int nbytes;
     while (threadexitTx == 0) {
         if (active == 1) {
             input_event();
@@ -533,7 +532,7 @@ void printHelp(void) {
     printf("*                    Usage: canFdToSerial canxmcuxfd - CAN FD  *\n\r");
     printf("*                    Usage: canFdToSerial canxmcuxsd - CAN 2.0 *\n\r");
     printf("*                  Example: canFdToSerial can0mcu1fd           *\n\r");
-    printf("* Use from systemd service: canFdToSerial@can0mcu1fd           *\n\r");
+    printf("* Use from systemd service: canfdtoserial@can0mcu1fd           *\n\r");
     printf("*               Currently only CAN FD is supported!            *\n\r");
     printf("****************************************************************\n\r");
 }

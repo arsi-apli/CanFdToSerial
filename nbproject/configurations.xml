@@ -19,6 +19,8 @@
                    projectFiles="true">
       <itemPath>main.c</itemPath>
     </logicalFolder>
+    <logicalFolder name="template" displayName="template" projectFiles="true">
+    </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
                    projectFiles="false"
@@ -34,6 +36,7 @@
   <sourceRootList>
     <Elem>klipper/generic</Elem>
     <Elem>/projekty/opensource/3d/extruder-board/CanFdToSerial/systemd</Elem>
+    <Elem>klipper/template</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

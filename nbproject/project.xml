@@ -12,6 +12,7 @@
             <sourceRootList>
                 <sourceRootElem>klipper/generic</sourceRootElem>
                 <sourceRootElem>/projekty/opensource/3d/extruder-board/CanFdToSerial/systemd</sourceRootElem>
+                <sourceRootElem>klipper/template</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>
