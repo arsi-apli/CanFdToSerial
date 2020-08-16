@@ -10,7 +10,10 @@ Klipper controller for 3D-printers https://github.com/KevinOConnor/klipper
 
 ## Protocol
 
-Klipper sends serial messages in the format  <len><sequence><data><crc><crc><end>
+Klipper sends serial messages in the format  
+```
+<len><sequence><data><crc><crc><end>
+```
 So each message has an extra 5 bytes, the application transmits only pure data.
 The message length and sequence are transmitted via the CAN ID.
 The CRC does not need to be transmitted because it is part of the CAN FD.
@@ -38,32 +41,45 @@ To change the line parameters, you need to edit the code in main.c:main
 
 The application runs in multi instance mode: one application  = one MCU
 can0mcu0fd - can0 MCU0
+
 can0mcu1fd - can0 MCU1
 
 can1mcu0fd - can1 MCU0
+
 can1mcu1fd - can1 MCU1
 
+And so on..
+
 fd - CAN FD
+
 sd - CAN 2.0B Currently not supported
 
 The application creates a serial port according to the command line argument:
 /tmp/ttyCAN0MCU0
+
 /tmp/ttyCAN0MCU1
 
 /tmp/ttyCAN1MCU0
+
 /tmp/ttyCAN1MCU1
+
 And so on..
 
 ## Run CanSerial as service
 The application and service runs in multi instance mode: one application  = one MCU
+
 can0mcu0fd - can0 MCU0
+
 can0mcu1fd - can0 MCU1
 
 can1mcu0fd - can1 MCU0
+
 can1mcu1fd - can1 MCU1
 
 And so on..
+
 fd - CAN FD
+
 sd - CAN 2.0B Currently not supported
 
 ```
