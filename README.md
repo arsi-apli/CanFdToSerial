@@ -40,6 +40,7 @@ on the configured port for the first time.
 To change the line parameters, you need to edit the code in main.c:main
 
 The application runs in multi instance mode: one application  = one MCU
+
 can0mcu0fd - can0 MCU0
 
 can0mcu1fd - can0 MCU1
