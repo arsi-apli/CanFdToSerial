@@ -70,14 +70,14 @@ static int running;
 int watch;
 int fd, sfd, res;
 struct termios ti;
-uint8_t input_buf[100];
+
 uint8_t need_sync;
 int input_pos;
 uint32_t bytes_read, bytes_invalid;
 static uint8_t mcuAddress;
-struct canfd_frame frameOut;
-can_fd_frame mcuCanFrame;
-can_fd_frame mcuCanPingFrame;
+uint8_t input_buf[100];
+
+
 static uint8_t encodeBuffer[100];
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
@@ -219,6 +219,9 @@ error:
  * 
  */
 static void handle_message(void) {
+    can_fd_frame mcuCanFrame;
+    struct canfd_frame frameOut;
+
     mcuCanFrame.can_id.id.msglen = input_buf[0] - 2 - 3; //message length - header and footer
     mcuCanFrame.can_id.id.destination_address = mcuAddress;
     mcuCanFrame.can_id.id.source_address = 0; //0=master
@@ -275,6 +278,7 @@ static void input_event(void) {
  * @return 
  */
 void *CanPxThread(void *ptr) {
+    can_fd_frame mcuCanPingFrame;
     //ping MCU every 5s
     struct canfd_frame frame;
     while (threadexitPx == 0) {
@@ -303,7 +307,7 @@ void *CanPxThread(void *ptr) {
         mcuCanPingFrame.can_id.id.source_address = 0;
         mcuCanPingFrame.can_id.id.msg_type = can_fd_msg_type_ping;
         mcuCanPingFrame.can_id.id.msglen = 0;
-        frame.can_id = mcuCanFrame.can_id.value | CAN_EFF_FLAG;
+        frame.can_id = mcuCanPingFrame.can_id.value | CAN_EFF_FLAG;
         frame.len = 0;
         if (write(sock, &frame, sizeof (struct can_frame)) != sizeof (struct can_frame)) {
             perror("Error sending command via CAN FD!");
@@ -326,6 +330,7 @@ void *CanIxThread(void *ptr) {
                 if (watch == event->wd) {
                     if (event->mask & IN_OPEN) {
                         printf("Port Open\n");
+                        sleep(1);
                         active = 1;
                         // Send reset to MCU
                     } else if (event->mask & IN_CLOSE) {
@@ -360,36 +365,38 @@ void *CanTxThread(void *ptr) {
  * @return 
  */
 void *CanRxThread(void *ptr) {
+    can_fd_frame mcuCanRxFrame;
+
     int nbytes;
     while (threadexit == 0) {
         struct canfd_frame frame;
         nbytes = read(sock, &frame, sizeof (struct canfd_frame));
         if (nbytes>-1) {
             //copy id from CAN frame
-            mcuCanFrame.can_id.value = frame.can_id;
+            mcuCanRxFrame.can_id.value = frame.can_id;
             //We have the CAN filter turned on, but for sure
-            if (mcuCanFrame.can_id.id.msg_type == can_fd_msg_type_serial_data && mcuCanFrame.can_id.id.source_address == mcuAddress) {
+            if (mcuCanRxFrame.can_id.id.msg_type == can_fd_msg_type_serial_data && mcuCanRxFrame.can_id.id.source_address == mcuAddress) {
                 //Handle serial data from MCU
                 if (active) {
                     //copy data from CAN frame at offset 2 and length from can id
-                    memcpy(&encodeBuffer[2], frame.data, mcuCanFrame.can_id.id.msglen);
+                    memcpy(&encodeBuffer[2], frame.data, mcuCanRxFrame.can_id.id.msglen);
                     //Encode pure response data to Klipper format <len><sequence><data><crc><crc><end>
-                    command_add_frame(encodeBuffer, mcuCanFrame.can_id.id.msglen + 2 + 3, mcuCanFrame.can_id.id.sequence);
+                    command_add_frame(encodeBuffer, mcuCanRxFrame.can_id.id.msglen + 2 + 3, mcuCanRxFrame.can_id.id.sequence);
                     //send data to Klipper
-                    if (write(fd, encodeBuffer, mcuCanFrame.can_id.id.msglen + 2 + 3)) {
-                        perror("Error sending command via CAN FD!");
+                    if (write(fd, encodeBuffer, mcuCanRxFrame.can_id.id.msglen + 2 + 3) == 0) {
+                        perror("Error sending command via /tmp!");
                     }
                 }
                 //We have the CAN filter turned on, but for sure    
-            } else if (mcuCanFrame.can_id.id.msg_type == can_fd_msg_type_announce && mcuCanFrame.can_id.id.source_address == mcuAddress) {
+            } else if (mcuCanRxFrame.can_id.id.msg_type == can_fd_msg_type_announce && mcuCanRxFrame.can_id.id.source_address == mcuAddress) {
                 //We will notify the MCU that we have joined
                 //MCU Changes the flashing LED to steady light
-                mcuCanFrame.can_id.value = 0;
-                mcuCanFrame.can_id.id.destination_address = mcuAddress;
-                mcuCanFrame.can_id.id.source_address = 0;
-                mcuCanFrame.can_id.id.msg_type = can_fd_msg_type_acknowledgeAnnounce;
-                mcuCanFrame.can_id.id.msglen = 0;
-                frame.can_id = mcuCanFrame.can_id.value | CAN_EFF_FLAG;
+                mcuCanRxFrame.can_id.value = 0;
+                mcuCanRxFrame.can_id.id.destination_address = mcuAddress;
+                mcuCanRxFrame.can_id.id.source_address = 0;
+                mcuCanRxFrame.can_id.id.msg_type = can_fd_msg_type_acknowledgeAnnounce;
+                mcuCanRxFrame.can_id.id.msglen = 0;
+                frame.can_id = mcuCanRxFrame.can_id.value | CAN_EFF_FLAG;
                 frame.len = 0;
                 if (write(sock, &frame, sizeof (struct can_frame)) != sizeof (struct can_frame)) {
                     perror("Error sending command via CAN FD!");
@@ -586,7 +593,7 @@ int main(int argc, char** argv) {
         static char ipUp[200];
         static char lock[200];
         //configure the CAN interface only at the first start on the given port
-        sprintf(lock, "/run/lock/%s.lock", portName);//use tmfs
+        sprintf(lock, "/run/lock/%s.lock", portName); //use tmfs
         if (access(lock, F_OK) != -1) {
             printf("CAN interface init skiped, the previous instance configured it..\n\r");
         } else {
